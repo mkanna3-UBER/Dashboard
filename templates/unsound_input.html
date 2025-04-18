@@ -32,12 +32,12 @@
                         Lookback Days
                     </label>
                     <div class="input-group input-group-lg">
-                        <input type="number" 
-                               class="form-control" 
-                               id="lookback_days" 
-                               name="lookback_days" 
-                               min="1" 
-                               max="20" 
+                        <input type="number"
+                               class="form-control"
+                               id="lookback_days"
+                               name="lookback_days"
+                               min="1"
+                               max="20"
                                value="1"
                                required>
                         <span class="input-group-text">days</span>
@@ -49,9 +49,12 @@
 
                 <!-- Submit Button -->
                 <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <button type="submit" class="btn btn-primary btn-lg w-100" id="submitButton">
                         <i class="fas fa-search me-1"></i>
-                        Analyze Tests
+                        <span class="button-text">Analyze Tests</span>
+                        <div class="spinner-border spinner-border-sm ms-2 d-none" role="status" id="loadingSpinner">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
                     </button>
                 </div>
             </form>
@@ -77,7 +80,7 @@
         </div>
     </div>
 
-   
+
 </div>
 
 <!-- Custom Styles -->
@@ -104,24 +107,48 @@
         border-radius: 8px;
         padding: 0.75rem 1.5rem;
     }
+    #submitButton {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .spinner-border {
+        margin-left: 8px;
+    }
 </style>
 
 <!-- Input Validation Script -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const lookbackInput = document.getElementById('lookback_days');
-    
+    const form = document.querySelector('form');
+    const submitButton = document.getElementById('submitButton');
+    const buttonText = submitButton.querySelector('.button-text');
+    const spinner = document.getElementById('loadingSpinner');
+
     // Set default value
     if (!lookbackInput.value) {
         lookbackInput.value = 1;
     }
-    
+
     // Add input validation
     lookbackInput.addEventListener('input', function() {
         let value = parseInt(this.value);
         if (value < 1) this.value = 1;
         if (value > 100) this.value = 20;
     });
+
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        // Show loading state
+        submitButton.disabled = true;
+        buttonText.textContent = 'Analyzing...';
+        spinner.classList.remove('d-none');
+
+        // Allow the form to submit normally
+        return true;
+    });
 });
 </script>
-{% endblock %} 
+{% endblock %}

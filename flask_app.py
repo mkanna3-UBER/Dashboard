@@ -1,7 +1,7 @@
 import importlib,subprocess,time,os,csv
 from queryrunner_client import Client
 from datetime import datetime
-from flask import Flask, render_template,request,send_from_directory,session,send_file,redirect,url_for,flash
+from flask import Flask, render_template,request,send_from_directory,session,send_file,redirect,url_for,flash, jsonify
 import requests, os
 import csv
 from flask_wtf.csrf import CSRFProtect
@@ -18,17 +18,14 @@ from wtforms import IntegerField
 from wtforms.validators import DataRequired, NumberRange
 import sqlite3
 from collections import defaultdict
+from helper import update, init_db
+from querylist import black_box_optimized_query, bits_optimized_query, unsound_optimized_query, failing_optimized_query, query_to_fetch_uri
 
 
 # File-based SQLite DB
 db_path = os.path.join(os.path.dirname(__file__), 'testcase_cache.db')
 conn = sqlite3.connect(db_path, check_same_thread=False)
 cursor = conn.cursor()
-
-#for query
-from querylist import *
-from helper import update
-
 
 app = Flask(__name__)
 app.secret_key = "QueryRunner"
@@ -70,63 +67,63 @@ def dashboard_1():
 def blackbox():
     form = dummyForm_to_skip_csrf()
     lob = request.args.get('lob') or request.form.get('lob')
-    
+
     if request.method == 'POST' and form.validate_on_submit():
         try:
             start_date = request.form.get('start_date')
             end_date = request.form.get('end_date')
             epic_name = EPIC_NAME_MAP.get(lob.lower(), '')
-            
+
             # Get test URIs from SQLite DB
             query = f"SELECT uri, uuid FROM {epic_name}"
             cursor.execute(query)
             test_rows = cursor.fetchall()
             test_uris = [f"'{row[0]}'" for row in test_rows]
-            
+
             if not test_uris:
                 logger.warning("No URIs found for selected LOB.")
                 return render_template('blackbox_data.html', lob=lob, data=[], form=form)
 
             uri_in_clause = ",".join(test_uris)
-            
+
             # Execute Presto query
             query = black_box_optimized_query.format(
                 start_date=start_date,
                 end_date=end_date,
                 test_uris=uri_in_clause
             )
-            
+
             qr_client = Client(user_email='mkanna3@ext.uber.com')
             result = qr_client.execute('presto', query)
             raw_data = [row for row in result.fetchall()]
-            
+
             # Process data with city-wise analysis
             result_map = defaultdict(lambda: {
                 "passed": 0,
                 "total": 0,
                 "city_stats": defaultdict(lambda: {"failed": 0, "total": 0})
             })
-            
+
             # Aggregate results
             for row in raw_data:
                 test_uri = row['test_uri']
                 result = row['result']
                 city = row['city'] or 'unknown'
-                
+
                 result_map[test_uri]["total"] += 1
                 result_map[test_uri]["city_stats"][city]["total"] += 1
                 result_map[test_uri]["blackbox_uri"]= row['blackbox_uri']
-                
+
                 if result == 'true':
                     result_map[test_uri]["passed"] += 1
                 else:
                     result_map[test_uri]["city_stats"][city]["failed"] += 1
-            
+
             # Calculate final statistics
             processed_data = []
             for uri, counts in result_map.items():
                 pass_rate = round((counts["passed"] / counts["total"]) * 100, 2) if counts["total"] > 0 else 0
-                
+
                 # Calculate city failure rates and sort by failure count
                 city_failures = []
                 for city, stats in counts["city_stats"].items():
@@ -138,10 +135,10 @@ def blackbox():
                             "total_count": stats["total"],
                             "failure_rate": failure_rate
                         })
-                
+
                 # Sort cities by failure count (descending)
                 city_failures.sort(key=lambda x: x["failed_count"], reverse=True)
-                
+
                 # Determine reliability bucket
                 if pass_rate > 95:
                     reliability_bucket = '>95%'
@@ -151,7 +148,7 @@ def blackbox():
                     reliability_bucket = '80-90%'
                 else:
                     reliability_bucket = '<80%'
-                
+
                 processed_data.append({
                     'test_uri': uri,
                     'pass_rate': pass_rate,
@@ -161,10 +158,10 @@ def blackbox():
                     'city_failures': city_failures,
                     'blackbox_uri':counts['blackbox_uri']
                 })
-            
+
             # Sort by pass rate
             processed_data.sort(key=lambda x: x['pass_rate'])
-            
+
             # Calculate bucket summary
             bucket_counter = Counter(item['reliability_bucket'] for item in processed_data)
             total_tests = len(processed_data)
@@ -177,12 +174,12 @@ def blackbox():
                     "count": count,
                     "percent": percent
                 })
-            
+
         except Exception as e:
             logger.error(f"Failed to run query: {e}")
             processed_data = []
             bucket_summary = []
-            
+
         return render_template(
             'blackbox_data.html',
             lob=lob,
@@ -190,7 +187,7 @@ def blackbox():
             bucket_summary=bucket_summary,
             form=form
         )
-        
+
     return render_template('blackbox_input.html', lob=lob, form=form)
 
 
@@ -241,7 +238,7 @@ def bits():
             uuid=uuid_in_clause
         )
         logger.debug(f"Presto query: {presto_query}")
-        
+
         qr_client = Client(user_email='mkanna3@ext.uber.com')
         result = qr_client.execute('presto', presto_query)
         data = [row for row in result.fetchall()]
@@ -250,7 +247,7 @@ def bits():
         for row in data:
             uuid = row['testcase_uuid']
             status = row['status']
-            
+
             if uuid not in result_map:
                 result_map[uuid] = {
                     "test_uri": uuid_uri_map.get(uuid, uuid),
@@ -324,7 +321,7 @@ def unsound():
         epic_name = EPIC_NAME_MAP.get(lob.lower(), 'BITS_E2E_Tests_Money')
 
         logger.debug(f"Received form: lob={lob}, lookback_days={lookback_days}")
-        
+
         # Step 1: Get UUIDs and URIs
         query = f"SELECT uri, uuid FROM {epic_name}"
         logger.debug(f"Query to get UUIDs: {query}")
@@ -340,7 +337,7 @@ def unsound():
         uuid_in_clause = ",".join(f"'{uuid}'" for uuid in test_uuids)
 
         # Step 2: Presto query for unsound-specific results
-    
+
         query = unsound_optimized_query.format(uuid=uuid_in_clause, lookback_days=lookback_days)
         logger.debug(f"Formatted unsound query: {query}")
 
@@ -402,7 +399,7 @@ def failing():
             # Step 1: Get UUIDs and URIs
             epic_name = EPIC_NAME_MAP.get(lob.lower(), 'default')
             query = f"SELECT uri, uuid FROM {epic_name}"
-            
+
             cursor.execute(query)
             test_rows = cursor.fetchall()
             test_uuids = [row[1] for row in test_rows]
@@ -414,7 +411,7 @@ def failing():
 
             uuid_in_clause = ",".join(f"'{uuid}'" for uuid in test_uuids)
             query = failing_optimized_query.format(uuid=uuid_in_clause, lookback_days=lookback_days)
-            
+
             qr_client = Client(user_email='mkanna3@ext.uber.com')
             result = qr_client.execute('presto', query)
             raw_rows = [row for row in result.fetchall()]
@@ -471,8 +468,8 @@ def failing():
         except Exception as e:
             logger.error(f"Failed to run failing query: {e}")
             final_data = []
-            
-        final_data = sorted(final_data, key=lambda x: x['failed_count'], reverse=True)    
+
+        final_data = sorted(final_data, key=lambda x: x['failed_count'], reverse=True)
         return render_template('failing_data.html', lob=lob, data=final_data, form=form)
 
     return render_template('failing_input.html', lob=lob, form=form)
@@ -495,6 +492,19 @@ def update1():
         return render_template('dashboard_money.html',lob='money', form=form)
     flash(f"Successfully updated testcases. {len(added_tests)} new testcases added.", "success")
     return render_template('dashboard_money.html',lob='money', form=form)
+
+@app.route('/update_testcases', methods=['POST'])
+def update_testcases():
+    try:
+        epic_name = request.json.get('epic_name')
+        if not epic_name:
+            return jsonify({'error': 'Epic name is required'}), 400
+
+        new_testcases = update(epic_name)
+        return jsonify({'success': True, 'new_testcases': new_testcases})
+    except Exception as e:
+        logging.error(f"Error updating test cases: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=5005,debug=True)

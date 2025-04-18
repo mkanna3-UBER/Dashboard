@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lob | upper }} - BlackBox Reliability{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <h2 class="mb-0">
+                    <i class="fas fa-chart-line text-primary me-2"></i>
+                    {{ lob | upper }} - BlackBox Reliability
+                </h2>
+                <span class="badge bg-primary">Dashboard</span>
+            </div>
+            <hr class="mt-2">
+            <p class="text-body-secondary">Select a date range to analyze BlackBox reliability metrics</p>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post" class="row g-3">
+                <!-- Hidden fields -->
+                <input type="hidden" name="lob" value="{{ lob }}">
+                {{ form.hidden_tag() }}
+
+                <!-- Date Range Section -->
+                <div class="col-md-5">
+                    <label for="start_date" class="form-label">
+                        <i class="fas fa-calendar-alt text-primary me-1"></i>
+                        Start Date
+                    </label>
+                    <input type="date" 
+                           class="form-control form-control-lg" 
+                           id="start_date" 
+                           name="start_date" 
+                           required>
+                </div>
+
+                <div class="col-md-5">
+                    <label for="end_date" class="form-label">
+                        <i class="fas fa-calendar-alt text-primary me-1"></i>
+                        End Date
+                    </label>
+                    <input type="date" 
+                           class="form-control form-control-lg" 
+                           id="end_date" 
+                           name="end_date" 
+                           required>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-search me-1"></i>
+                        Analyze
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Tips Card -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-body-tertiary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        Quick Tips
+                    </h5>
+                    <ul class="mb-0 text-body-secondary">
+                        <li>Select a date range within the last 30 days for optimal performance</li>
+                        <li>The analysis includes city-wise breakdown and reliability metrics</li>
+                        <li>Results are categorized into reliability buckets (>95%, 90-95%, 80-90%, <80%)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .card {
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    .form-control {
+        border-radius: 8px;
+    }
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .btn-primary {
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+    }
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+    }
+    /* Theme-specific styles */
+    [data-bs-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
+</style>
+
+<!-- Date Range Validation Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
+
+    // Set default dates (last 7 days)
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 1);
+
+    startDate.value = sevenDaysAgo.toISOString().split('T')[0];
+    endDate.value = today.toISOString().split('T')[0];
+
+    // Validate date range
+    startDate.addEventListener('change', validateDates);
+    endDate.addEventListener('change', validateDates);
+
+    function validateDates() {
+        if (startDate.value && endDate.value) {
+            if (new Date(startDate.value) > new Date(endDate.value)) {
+                endDate.value = startDate.value;
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 

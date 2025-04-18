@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lob | upper }} Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="mb-4">
+        <h2 class="display-6 mb-0">{{ lob | upper }} Dashboard</h2>
+        <p class="text-muted">Test Reliability Overview</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+                    <div class="d-flex align-items-center">
+                        {% if category == 'success' %}
+                            <i class="fas fa-check-circle me-2"></i>
+                        {% elif category == 'danger' %}
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                        {% elif category == 'warning' %}
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% else %}
+                            <i class="fas fa-info-circle me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Cards Grid -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+
+        <!-- Black Box Card -->
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-dark p-3 me-3">
+                            <i class="fas fa-cube text-white"></i>
+                        </div>
+                        <h5 class="card-title mb-0">Black Box Reliability</h5>
+                    </div>
+                    <p class="card-text flex-grow-1">Check summary metrics for black-box tests.</p>
+                    <div class="mt-auto">
+                        <a href="/blackbox?lob={{ lob }}" class="btn btn-dark w-100">
+                            View Details <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+      
+        <!-- BITS Card -->
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-primary p-3 me-3">
+                            <i class="fas fa-microchip text-white"></i>
+                        </div>
+                        <h5 class="card-title mb-0">BITS Pipeline Reliability</h5>
+                    </div>
+                    <p class="card-text flex-grow-1">Explore BITS test pass/fail trends.</p>
+                    <div class="mt-auto">
+                        <a href="/bits?lob={{ lob }}" class="btn btn-primary w-100">
+                            View Details <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unsound Tests Card -->
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-warning p-3 me-3">
+                            <i class="fas fa-exclamation-triangle text-dark"></i>
+                        </div>
+                        <h5 class="card-title mb-0">List Unsound Tests</h5>
+                    </div>
+                    <p class="card-text flex-grow-1">See tests marked as unstable.</p>
+                    <div class="mt-auto">
+                        <a href="/unsound?lob={{ lob }}" class="btn btn-warning w-100">
+                            View Details <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Failing Tests Card -->
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-danger p-3 me-3">
+                            <i class="fas fa-times-circle text-white"></i>
+                        </div>
+                        <h5 class="card-title mb-0">Failing Tests In BITS</h5>
+                    </div>
+                    <p class="card-text flex-grow-1">Check recent test failures.</p>
+                    <div class="mt-auto">
+                        <a href="/failing?lob={{ lob }}" class="btn btn-danger w-100">
+                            View Details <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+          
+
+        <!-- Update DB Card -->
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-info p-3 me-3">
+                            <i class="fas fa-database text-white"></i>
+                        </div>
+                        <h5 class="card-title mb-0">Update TestCase</h5>
+                    </div>
+                    <p class="card-text flex-grow-1">Missing test cases on the dashboard? Click below to update the newly onboarded test</p>
+                    <div class="mt-auto">
+                        <a href="/update?lob={{ lob }}" class="btn btn-info text-white w-100">
+                            Update Database <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add required CSS -->
+{% block extra_css %}
+<style>
+.hover-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+}
+
+.rounded-circle {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+.card-text {
+    color: #6c757d;
+}
+</style>
+{% endblock %}
+
+<!-- Add required JavaScript -->
+{% block extra_js %}
+<script>
+// Optional: Add animation when cards come into view
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    });
+
+    cards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.3s ease-out';
+        observer.observe(card);
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

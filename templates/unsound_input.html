@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lob | upper }} - Unsound Tests{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    {{ lob | upper }} - Unsound Tests
+                </h2>
+            </div>
+            <hr class="mt-2">
+            <p class="text-body-secondary">Analyze test reliability issues over a specified time period</p>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card theme-aware-card shadow-sm">
+        <div class="card-body">
+            <form method="post" class="row g-3">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="lob" value="{{ lob }}">
+
+                <!-- Lookback Days Input -->
+                <div class="col-md-8">
+                    <label for="lookback_days" class="form-label">
+                        <i class="fas fa-history text-primary me-1"></i>
+                        Lookback Days
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <input type="number" 
+                               class="form-control" 
+                               id="lookback_days" 
+                               name="lookback_days" 
+                               min="1" 
+                               max="20" 
+                               value="1"
+                               required>
+                        <span class="input-group-text">days</span>
+                    </div>
+                    <div class="form-text text-body-secondary">
+                        Choose a period between 1 and 100 days
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-search me-1"></i>
+                        Analyze Tests
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Tips Card -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-body-tertiary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        Quick Tips
+                    </h5>
+                    <ul class="mb-0 text-body-secondary">
+                        <li>Longer lookback periods provide more data but may take longer to analyze</li>
+                        <li>10 days is recommended for optimal balance of data and performance</li>
+                        <li>Results will highlight tests with inconsistent behavior patterns</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .card {
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+    .form-control, .input-group-text {
+        border-radius: 8px;
+    }
+    .input-group .form-control {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    .input-group .input-group-text {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .btn-primary {
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+    }
+</style>
+
+<!-- Input Validation Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const lookbackInput = document.getElementById('lookback_days');
+    
+    // Set default value
+    if (!lookbackInput.value) {
+        lookbackInput.value = 1;
+    }
+    
+    // Add input validation
+    lookbackInput.addEventListener('input', function() {
+        let value = parseInt(this.value);
+        if (value < 1) this.value = 1;
+        if (value > 100) this.value = 20;
+    });
+});
+</script>
+{% endblock %} 

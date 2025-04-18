@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lob | upper }} - BITS Reliability{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0">
+                    <i class="fas fa-chart-bar text-primary me-2"></i>
+                    {{ lob | upper }} - BITS Reliability
+                </h2>
+            </div>
+            <hr class="mt-2">
+            <p class="text-body-secondary">Select a date range to analyze BITS reliability metrics</p>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                        {{ message }}
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Form Card -->
+    <div class="card theme-aware-card shadow-sm">
+        <div class="card-body">
+            <form method="post" class="row g-3">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="lob" value="{{ lob }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <!-- Date Range Section -->
+                <div class="col-md-5">
+                    <label for="start_date" class="form-label">
+                        <i class="fas fa-calendar-alt text-primary me-1"></i>
+                        Start Date
+                    </label>
+                    <input type="date" 
+                           class="form-control form-control-lg" 
+                           id="start_date"
+                           name="start_date" 
+                           required>
+                </div>
+
+                <div class="col-md-5">
+                    <label for="end_date" class="form-label">
+                        <i class="fas fa-calendar-alt text-primary me-1"></i>
+                        End Date
+                    </label>
+                    <input type="date" 
+                           class="form-control form-control-lg" 
+                           id="end_date"
+                           name="end_date" 
+                           required>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-search me-1"></i>
+                        Analyze
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Tips Card -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-body-tertiary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        Quick Tips
+                    </h5>
+                    <ul class="mb-0 text-body-secondary">
+                        <li>Select a date range within the last 10 days for optimal performance</li>
+                        <li>The analysis includes detailed reliability metrics and trends</li>
+                        <li>Results will show success rates and failure patterns</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .card {
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+    .form-control {
+        border-radius: 8px;
+    }
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .alert {
+        border-radius: 10px;
+        border: none;
+    }
+    .alert-success {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    .alert-danger {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    .alert-info {
+        background-color: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+    }
+    [data-bs-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
+</style>
+
+<!-- Date Range Validation Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
+
+    // Set default dates (last 7 days)
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 1);
+
+    startDate.value = sevenDaysAgo.toISOString().split('T')[0];
+    endDate.value = today.toISOString().split('T')[0];
+
+    // Validate date range
+    startDate.addEventListener('change', validateDates);
+    endDate.addEventListener('change', validateDates);
+
+    function validateDates() {
+        if (startDate.value && endDate.value) {
+            if (new Date(startDate.value) > new Date(endDate.value)) {
+                endDate.value = startDate.value;
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 
